@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -52,11 +52,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: `Welcome back, ${user.name}!`,
         });
       } else {
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: "Invalid credentials. Please try again.",
-        });
+        // Check if user exists in localStorage from previous signup
+        const savedUsers = localStorage.getItem('farmMarketUsers');
+        const users = savedUsers ? JSON.parse(savedUsers) : [];
+        
+        const foundUser = users.find((u: User) => 
+          u.email === email && u.role === role
+        );
+        
+        if (foundUser) {
+          setUser(foundUser);
+          localStorage.setItem('farmMarketUser', JSON.stringify(foundUser));
+          toast({
+            title: "Login successful",
+            description: `Welcome back, ${foundUser.name}!`,
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Login failed",
+            description: "Invalid credentials. Please try again.",
+          });
+        }
       }
       setIsLoading(false);
     }, 1000);
@@ -74,6 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role
       };
       
+      // Save user to "database" (localStorage in this case)
+      const savedUsers = localStorage.getItem('farmMarketUsers');
+      const users = savedUsers ? JSON.parse(savedUsers) : [];
+      users.push({...newUser, password}); // Store password for demo purposes
+      localStorage.setItem('farmMarketUsers', JSON.stringify(users));
+      
+      // Log in the user right after signup
       setUser(newUser);
       localStorage.setItem('farmMarketUser', JSON.stringify(newUser));
       
@@ -96,12 +120,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Check for existing user session on load
-  useState(() => {
+  useEffect(() => {
     const savedUser = localStorage.getItem('farmMarketUser');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
-  });
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>
