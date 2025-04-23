@@ -21,13 +21,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { Product } from "@/types";
+import { mockProducts } from "@/data/mockData";
 
 interface AddProductModalProps {
   open: boolean;
   onClose: () => void;
+  onProductAdded: (product: Product) => void;
 }
 
-const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
+const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose, onProductAdded }) => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [productData, setProductData] = useState({
@@ -63,23 +66,40 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose }) => {
       return;
     }
     
-    // Simulate API call to create product
-    setTimeout(() => {
-      toast.success(`Product "${productData.name}" added successfully`);
-      setIsSubmitting(false);
-      
-      // Reset form
-      setProductData({
-        name: "",
-        description: "",
-        price: "",
-        category: "",
-        stock: "",
-        unit: "lb",
-      });
-      
-      onClose();
-    }, 1000);
+    // Create a new product
+    const newProduct: Product = {
+      id: `product-${Date.now()}`, // Generate a unique ID
+      name: productData.name,
+      description: productData.description,
+      price: parseFloat(productData.price),
+      image: "https://images.unsplash.com/photo-1542838132-92c53300491e", // Default image
+      category: productData.category as 'vegetable' | 'fruit',
+      farmerId: user.id,
+      farmerName: user.name,
+      stock: parseInt(productData.stock),
+      unit: productData.unit
+    };
+    
+    // Add to mock data (in a real app, this would be an API call)
+    mockProducts.unshift(newProduct);
+    
+    // Call the callback to update parent component
+    onProductAdded(newProduct);
+    
+    toast.success(`Product "${productData.name}" added successfully`);
+    setIsSubmitting(false);
+    
+    // Reset form
+    setProductData({
+      name: "",
+      description: "",
+      price: "",
+      category: "",
+      stock: "",
+      unit: "lb",
+    });
+    
+    onClose();
   };
 
   return (

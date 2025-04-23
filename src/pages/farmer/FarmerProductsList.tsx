@@ -43,7 +43,15 @@ const FarmerProductsList: React.FC<FarmerProductsListProps> = ({ products }) => 
       <div className="text-center py-16">
         <h3 className="text-lg font-medium">No Products Yet</h3>
         <p className="mt-1 text-gray-500 mb-4">Start adding products to your inventory.</p>
-        <Button className="bg-farm-green hover:bg-farm-green/90">Add Your First Product</Button>
+        <Button 
+          className="bg-farm-green hover:bg-farm-green/90"
+          onClick={() => {
+            // This will be handled by the parent component
+            document.querySelector('button[aria-label="Add New Product"]')?.click();
+          }}
+        >
+          Add Your First Product
+        </Button>
       </div>
     );
   }

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import { getFarmerOrders, getFarmerProducts } from "@/data/mockData";
 import { Package, Plus } from "lucide-react";
-import { Order } from "@/types";
+import { Order, Product } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import FarmerProductsList from "./FarmerProductsList";
 import AddProductModal from "./AddProductModal";
@@ -20,11 +20,26 @@ import AddProductModal from "./AddProductModal";
 const FarmerDashboardPage = () => {
   const { user } = useAuth();
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [farmerProducts, setFarmerProducts] = useState<Product[]>([]);
+  const [farmerOrders, setFarmerOrders] = useState<Order[]>([]);
+  
+  useEffect(() => {
+    if (user) {
+      // Get initial data
+      const products = getFarmerProducts(user.id);
+      const orders = getFarmerOrders(user.id);
+      
+      setFarmerProducts(products);
+      setFarmerOrders(orders);
+    }
+  }, [user]);
+
+  const handleProductAdded = (newProduct: Product) => {
+    // Add the new product to the farmer's products
+    setFarmerProducts(prevProducts => [newProduct, ...prevProducts]);
+  };
   
   if (!user) return null;
-  
-  const farmerProducts = getFarmerProducts(user.id);
-  const farmerOrders = getFarmerOrders(user.id);
 
   // Group orders by status
   const ordersByStatus = farmerOrders.reduce<Record<string, Order[]>>((acc, order) => {
@@ -44,7 +59,11 @@ const FarmerDashboardPage = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Farmer Dashboard</h1>
-        <Button onClick={() => setShowAddProductModal(true)} className="bg-farm-green hover:bg-farm-green/90">
+        <Button 
+          onClick={() => setShowAddProductModal(true)} 
+          className="bg-farm-green hover:bg-farm-green/90"
+          aria-label="Add New Product"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add New Product
         </Button>
@@ -234,6 +253,7 @@ const FarmerDashboardPage = () => {
       <AddProductModal 
         open={showAddProductModal} 
         onClose={() => setShowAddProductModal(false)} 
+        onProductAdded={handleProductAdded}
       />
     </div>
   );
