@@ -1,72 +1,24 @@
 
-import { useState, useEffect } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/context/AuthContext";
-import { getFarmerOrders, getFarmerProducts } from "@/data/mockData";
-import { Package, Plus } from "lucide-react";
-import { Order, Product } from "@/types";
 import { Badge } from "@/components/ui/badge";
+import { Plus } from "lucide-react";
 import FarmerProductsList from "./FarmerProductsList";
 import AddProductModal from "./AddProductModal";
+import DashboardStats from "./components/DashboardStats";
+import OrdersTab from "./components/OrdersTab";
+import { useFarmerDashboard } from "@/hooks/useFarmerDashboard";
+import { Product } from "@/types";
 
 const FarmerDashboardPage = () => {
-  const { user } = useAuth();
   const [showAddProductModal, setShowAddProductModal] = useState(false);
-  const [farmerProducts, setFarmerProducts] = useState<Product[]>([]);
-  const [farmerOrders, setFarmerOrders] = useState<Order[]>([]);
-  
-  useEffect(() => {
-    if (user) {
-      // Get initial data
-      const products = getFarmerProducts(user.id);
-      const orders = getFarmerOrders(user.id);
-      
-      setFarmerProducts(products);
-      setFarmerOrders(orders);
-    }
-  }, [user]);
-
-  // Set up polling for new orders every 30 seconds
-  useEffect(() => {
-    if (!user) return;
-    
-    const intervalId = setInterval(() => {
-      const updatedOrders = getFarmerOrders(user.id);
-      setFarmerOrders(updatedOrders);
-    }, 30000);
-    
-    return () => clearInterval(intervalId);
-  }, [user]);
+  const { farmerProducts, setFarmerProducts, ordersByStatus, counts } = useFarmerDashboard();
 
   const handleProductAdded = (newProduct: Product) => {
-    // Add the new product to the farmer's products
     setFarmerProducts(prevProducts => [newProduct, ...prevProducts]);
   };
-  
-  if (!user) return null;
 
-  // Group orders by status
-  const ordersByStatus = farmerOrders.reduce<Record<string, Order[]>>((acc, order) => {
-    if (!acc[order.status]) {
-      acc[order.status] = [];
-    }
-    acc[order.status].push(order);
-    return acc;
-  }, {});
-
-  // Get counts for each status
-  const pendingCount = ordersByStatus.pending?.length || 0;
-  const processingCount = ordersByStatus.processing?.length || 0;
-  const shippedCount = ordersByStatus.shipped?.length || 0;
-  
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -81,47 +33,20 @@ const FarmerDashboardPage = () => {
         </Button>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Products</CardTitle>
-            <CardDescription>Your current inventory</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{farmerProducts.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Active Orders</CardTitle>
-            <CardDescription>Orders needing attention</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{pendingCount + processingCount}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Shipped Orders</CardTitle>
-            <CardDescription>Orders on their way</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{shippedCount}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <DashboardStats 
+        productsCount={farmerProducts.length}
+        activeOrdersCount={counts.pending + counts.processing}
+        shippedOrdersCount={counts.shipped}
+      />
 
       <Tabs defaultValue="products" className="mt-8">
         <TabsList className="mb-8">
           <TabsTrigger value="products">My Products</TabsTrigger>
           <TabsTrigger value="orders">
             Orders
-            {pendingCount > 0 && (
+            {counts.pending > 0 && (
               <Badge className="ml-2 bg-farm-orange text-white">
-                {pendingCount} New
+                {counts.pending} New
               </Badge>
             )}
           </TabsTrigger>
@@ -136,133 +61,10 @@ const FarmerDashboardPage = () => {
         </TabsContent>
         
         <TabsContent value="orders">
-          {farmerOrders.length === 0 ? (
-            <div className="text-center py-16">
-              <Package className="mx-auto h-12 w-12 text-gray-300" />
-              <h3 className="mt-4 text-lg font-medium">No Orders Yet</h3>
-              <p className="mt-1 text-gray-500">When customers place orders for your products, they will appear here.</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Pending Orders */}
-              {ordersByStatus.pending?.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Pending Orders</h3>
-                  <div className="space-y-4">
-                    {ordersByStatus.pending.map(order => (
-                      <Card key={order.id}>
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between">
-                            <CardTitle className="text-md">Order #{order.id}</CardTitle>
-                            <Badge className="bg-yellow-500">Pending</Badge>
-                          </div>
-                          <CardDescription>
-                            Placed on {new Date(order.createdAt).toLocaleDateString()} by {order.buyerName}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ul className="space-y-2 mb-4">
-                            {order.items
-                              .filter(item => item.product.farmerId === user.id)
-                              .map(item => (
-                                <li key={item.product.id} className="flex justify-between">
-                                  <span>{item.quantity}x {item.product.name}</span>
-                                  <span>${(item.product.price * item.quantity).toFixed(2)}</span>
-                                </li>
-                              ))}
-                          </ul>
-                          <div className="flex justify-end gap-2 mt-4">
-                            <Button variant="outline" size="sm">
-                              View Details
-                            </Button>
-                            <Button size="sm" className="bg-farm-green hover:bg-farm-green/90">
-                              Process Order
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Processing Orders */}
-              {ordersByStatus.processing?.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Processing Orders</h3>
-                  <div className="space-y-4">
-                    {ordersByStatus.processing.map(order => (
-                      <Card key={order.id}>
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between">
-                            <CardTitle className="text-md">Order #{order.id}</CardTitle>
-                            <Badge className="bg-blue-500">Processing</Badge>
-                          </div>
-                          <CardDescription>
-                            Placed on {new Date(order.createdAt).toLocaleDateString()} by {order.buyerName}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ul className="space-y-2 mb-4">
-                            {order.items
-                              .filter(item => item.product.farmerId === user.id)
-                              .map(item => (
-                                <li key={item.product.id} className="flex justify-between">
-                                  <span>{item.quantity}x {item.product.name}</span>
-                                  <span>${(item.product.price * item.quantity).toFixed(2)}</span>
-                                </li>
-                              ))}
-                          </ul>
-                          <div className="flex justify-end gap-2 mt-4">
-                            <Button variant="outline" size="sm">
-                              View Details
-                            </Button>
-                            <Button size="sm" className="bg-farm-green hover:bg-farm-green/90">
-                              Mark as Shipped
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Shipped Orders */}
-              {ordersByStatus.shipped?.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Shipped Orders</h3>
-                  <div className="space-y-4">
-                    {ordersByStatus.shipped.map(order => (
-                      <Card key={order.id}>
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between">
-                            <CardTitle className="text-md">Order #{order.id}</CardTitle>
-                            <Badge className="bg-green-500">Shipped</Badge>
-                          </div>
-                          <CardDescription>
-                            Placed on {new Date(order.createdAt).toLocaleDateString()} by {order.buyerName}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ul className="space-y-2">
-                            {order.items
-                              .filter(item => item.product.farmerId === user.id)
-                              .map(item => (
-                                <li key={item.product.id} className="flex justify-between">
-                                  <span>{item.quantity}x {item.product.name}</span>
-                                  <span>${(item.product.price * item.quantity).toFixed(2)}</span>
-                                </li>
-                              ))}
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <OrdersTab 
+            ordersByStatus={ordersByStatus} 
+            pendingCount={counts.pending}
+          />
         </TabsContent>
       </Tabs>
 
