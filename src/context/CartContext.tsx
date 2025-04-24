@@ -1,7 +1,9 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { CartItem, Product } from "../types";
+import { CartItem, Product, Order } from "../types";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "./AuthContext";
+import { toast } from "sonner";
 
 interface CartContextType {
   items: CartItem[];
@@ -9,6 +11,7 @@ interface CartContextType {
   updateQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
+  checkout: () => void;
   cartTotal: number;
   itemCount: number;
 }
@@ -18,6 +21,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Load cart from localStorage on initial render
   useEffect(() => {
@@ -101,6 +105,56 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // New checkout function to handle order creation
+  const checkout = () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Login required",
+        description: "Please login before checking out",
+      });
+      return;
+    }
+
+    if (items.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Empty cart",
+        description: "Your cart is empty",
+      });
+      return;
+    }
+
+    // Create new order
+    const newOrder: Order = {
+      id: `order-${Date.now()}`,
+      buyerId: user.id,
+      buyerName: user.name,
+      items: [...items],
+      total: cartTotal,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+
+    // Save order to "database" (localStorage in this case)
+    const savedOrders = localStorage.getItem('farmMarketOrders');
+    const orders = savedOrders ? JSON.parse(savedOrders) : [];
+    orders.push(newOrder);
+    localStorage.setItem('farmMarketOrders', JSON.stringify(orders));
+
+    // Show notification
+    toast({
+      title: "Order placed",
+      description: "Your order has been placed successfully!",
+    });
+
+    // Notification for Sonner toast
+    toast.success("Order placed successfully!");
+
+    // Clear cart after checkout
+    clearCart();
+  };
+
   const cartTotal = items.reduce(
     (total, item) => total + item.product.price * item.quantity,
     0
@@ -116,6 +170,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         removeFromCart,
         clearCart,
+        checkout,
         cartTotal,
         itemCount
       }}

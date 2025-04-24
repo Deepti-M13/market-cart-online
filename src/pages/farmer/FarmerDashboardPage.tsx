@@ -34,6 +34,18 @@ const FarmerDashboardPage = () => {
     }
   }, [user]);
 
+  // Set up polling for new orders every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+    
+    const intervalId = setInterval(() => {
+      const updatedOrders = getFarmerOrders(user.id);
+      setFarmerOrders(updatedOrders);
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [user]);
+
   const handleProductAdded = (newProduct: Product) => {
     // Add the new product to the farmer's products
     setFarmerProducts(prevProducts => [newProduct, ...prevProducts]);
@@ -116,7 +128,11 @@ const FarmerDashboardPage = () => {
         </TabsList>
         
         <TabsContent value="products" className="space-y-4">
-          <FarmerProductsList products={farmerProducts} />
+          <FarmerProductsList 
+            products={farmerProducts} 
+            onAddClick={() => setShowAddProductModal(true)} 
+            onProductAdded={handleProductAdded}
+          />
         </TabsContent>
         
         <TabsContent value="orders">

@@ -1,14 +1,21 @@
 
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 
 const CheckoutSuccessPage = () => {
+  const navigate = useNavigate();
+  const { checkout } = useCart();
+  
   useEffect(() => {
+    // Process the checkout when the success page loads
+    checkout();
+    
     // Scroll to top on component mount
     window.scrollTo(0, 0);
-  }, []);
+  }, [checkout]);
 
   return (
     <div className="container mx-auto px-4 py-16 text-center">

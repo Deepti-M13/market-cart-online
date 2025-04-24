@@ -1,4 +1,3 @@
-
 import { Product, Order } from "../types";
 
 export const mockProducts: Product[] = [
@@ -139,14 +138,18 @@ export const mockOrders: Order[] = [
   }
 ];
 
-// Function to get orders for a specific farmer
-export const getFarmerOrders = (farmerId: string): Order[] => {
-  return mockOrders.filter(order => 
-    order.items.some(item => item.product.farmerId === farmerId)
-  );
+export const getFarmerProducts = (farmerId: string) => {
+  // Get products filtered by farmerId
+  return mockProducts.filter(product => product.farmerId === farmerId);
 };
 
-// Function to get products for a specific farmer
-export const getFarmerProducts = (farmerId: string): Product[] => {
-  return mockProducts.filter(product => product.farmerId === farmerId);
+export const getFarmerOrders = (farmerId: string) => {
+  // Get orders where any item has products from this farmer
+  const savedOrders = localStorage.getItem('farmMarketOrders');
+  const allOrders = savedOrders ? JSON.parse(savedOrders) : [];
+  
+  // Filter orders that contain products from this farmer
+  return allOrders.filter((order: any) => {
+    return order.items.some((item: any) => item.product.farmerId === farmerId);
+  });
 };
