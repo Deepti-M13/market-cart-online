@@ -1,9 +1,9 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { CartItem, Product, Order } from "../types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "./AuthContext";
-import { toast } from "sonner";
+import { toast as sonnerToast } from "sonner";
 
 interface CartContextType {
   items: CartItem[];
@@ -148,8 +148,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       description: "Your order has been placed successfully!",
     });
 
-    // Notification for Sonner toast
-    toast.success("Order placed successfully!");
+    // Use sonnerToast for success notification
+    sonnerToast.success("Order placed successfully!");
 
     // Clear cart after checkout
     clearCart();

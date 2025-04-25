@@ -1,13 +1,16 @@
 
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 const CheckoutSuccessPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { checkout } = useCart();
+  
+  const paymentMethod = location.state?.paymentMethod || "card";
   
   useEffect(() => {
     // Process the checkout when the success page loads
@@ -28,6 +31,10 @@ const CheckoutSuccessPage = () => {
 
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <h2 className="text-xl font-medium mb-4">What Happens Next?</h2>
+          <p className="mb-4 text-left">
+            <span className="font-medium">Payment Method:</span>{" "}
+            {paymentMethod === "cod" ? "Cash on Delivery" : "Credit/Debit Card"}
+          </p>
           <ul className="text-left space-y-4">
             <li className="flex items-start">
               <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-farm-lightGreen text-farm-green font-bold mr-3 flex-shrink-0">1</span>
@@ -39,7 +46,7 @@ const CheckoutSuccessPage = () => {
             </li>
             <li className="flex items-start">
               <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-farm-lightGreen text-farm-green font-bold mr-3 flex-shrink-0">3</span>
-              <span>Your order will be delivered fresh to your door</span>
+              <span>{paymentMethod === "cod" ? "Pay when your order is delivered" : "Your payment has been processed"}</span>
             </li>
           </ul>
         </div>

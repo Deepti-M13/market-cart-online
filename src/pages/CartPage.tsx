@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import QuantitySelector from "@/components/QuantitySelector";
-import { ShoppingCart, Trash2, CreditCard } from "lucide-react";
+import { ShoppingCart, Trash2, CreditCard, Cash } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const CartPage = () => {
   const { items, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "cod">("card");
 
   const handleQuantityChange = (productId: string, quantity: number) => {
     updateQuantity(productId, quantity);
@@ -27,7 +30,7 @@ const CartPage = () => {
     // Simulate checkout process
     setTimeout(() => {
       clearCart();
-      navigate("/checkout/success");
+      navigate("/checkout/success", { state: { paymentMethod } });
       setIsProcessing(false);
     }, 2000);
   };
@@ -145,6 +148,30 @@ const CartPage = () => {
               </div>
             </div>
             
+            <div className="mb-4">
+              <h3 className="font-medium mb-3">Payment Method</h3>
+              <RadioGroup
+                value={paymentMethod}
+                onValueChange={(value) => setPaymentMethod(value as "card" | "cod")}
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2 border rounded-md p-3">
+                  <RadioGroupItem value="card" id="card" />
+                  <Label htmlFor="card" className="flex items-center">
+                    <CreditCard className="h-5 w-5 mr-2" />
+                    Credit/Debit Card
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 border rounded-md p-3">
+                  <RadioGroupItem value="cod" id="cod" />
+                  <Label htmlFor="cod" className="flex items-center">
+                    <Cash className="h-5 w-5 mr-2" />
+                    Cash on Delivery (COD)
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
             <Button 
               className="w-full bg-farm-green hover:bg-farm-green/90 mb-3"
               onClick={handleCheckout}
@@ -154,7 +181,11 @@ const CartPage = () => {
                 <>Processing...</>
               ) : (
                 <>
-                  <CreditCard className="mr-2 h-5 w-5" />
+                  {paymentMethod === "card" ? (
+                    <CreditCard className="mr-2 h-5 w-5" />
+                  ) : (
+                    <Cash className="mr-2 h-5 w-5" />
+                  )}
                   Proceed to Checkout
                 </>
               )}
