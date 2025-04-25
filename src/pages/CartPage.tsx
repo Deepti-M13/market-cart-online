@@ -1,13 +1,13 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import QuantitySelector from "@/components/QuantitySelector";
 import { ShoppingCart, Trash2, CreditCard, DollarSign } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { CheckoutForm } from "@/components/checkout/CheckoutForm";
+import QuantitySelector from "@/components/QuantitySelector";
 
 const CartPage = () => {
   const { items, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
@@ -20,7 +20,7 @@ const CartPage = () => {
     updateQuantity(productId, quantity);
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = (formData: any) => {
     if (!user) {
       navigate("/auth/login", { state: { from: "/cart" } });
       return;
@@ -29,8 +29,16 @@ const CartPage = () => {
     setIsProcessing(true);
     // Simulate checkout process
     setTimeout(() => {
-      clearCart();
-      navigate("/checkout/success", { state: { paymentMethod } });
+      checkout();
+      navigate("/checkout/success", { 
+        state: { 
+          paymentMethod,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode
+        } 
+      });
       setIsProcessing(false);
     }, 2000);
   };
@@ -172,24 +180,10 @@ const CartPage = () => {
               </RadioGroup>
             </div>
             
-            <Button 
-              className="w-full bg-farm-green hover:bg-farm-green/90 mb-3"
-              onClick={handleCheckout}
-              disabled={isProcessing}
-            >
-              {isProcessing ? (
-                <>Processing...</>
-              ) : (
-                <>
-                  {paymentMethod === "card" ? (
-                    <CreditCard className="mr-2 h-5 w-5" />
-                  ) : (
-                    <Cash className="mr-2 h-5 w-5" />
-                  )}
-                  Proceed to Checkout
-                </>
-              )}
-            </Button>
+            <CheckoutForm 
+              onSubmit={handleCheckout}
+              paymentMethod={paymentMethod}
+            />
             
             {!user && (
               <p className="text-sm text-center text-gray-500 mt-2">

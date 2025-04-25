@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import FarmerProductsList from "./FarmerProductsList";
 import AddProductModal from "./AddProductModal";
 import DashboardStats from "./components/DashboardStats";
@@ -43,7 +44,7 @@ const FarmerDashboardPage = () => {
           <TabsTrigger value="orders">
             Orders
             {counts.pending > 0 && (
-              <Badge className="ml-2 bg-farm-orange text-white">
+              <Badge variant="destructive" className="ml-2">
                 {counts.pending} New
               </Badge>
             )}

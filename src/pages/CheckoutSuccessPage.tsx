@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,10 @@ const CheckoutSuccessPage = () => {
   const { checkout } = useCart();
   
   const paymentMethod = location.state?.paymentMethod || "card";
+  const address = location.state?.address;
+  const city = location.state?.city;
+  const state = location.state?.state;
+  const zipCode = location.state?.zipCode;
   
   useEffect(() => {
     // Process the checkout when the success page loads
@@ -30,6 +33,16 @@ const CheckoutSuccessPage = () => {
         </p>
 
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <h2 className="text-xl font-medium mb-4">Order Details</h2>
+          
+          <div className="text-left space-y-2 mb-6">
+            <p><span className="font-medium">Payment Method:</span> {paymentMethod === "cod" ? "Cash on Delivery" : "Credit/Debit Card"}</p>
+            <p><span className="font-medium">Delivery Address:</span> {address}</p>
+            <p><span className="font-medium">City:</span> {city}</p>
+            <p><span className="font-medium">State:</span> {state}</p>
+            <p><span className="font-medium">ZIP Code:</span> {zipCode}</p>
+          </div>
+
           <h2 className="text-xl font-medium mb-4">What Happens Next?</h2>
           <p className="mb-4 text-left">
             <span className="font-medium">Payment Method:</span>{" "}
