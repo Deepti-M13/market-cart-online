@@ -1,10 +1,9 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Order } from "@/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface OrdersListProps {
   orders: Order[];
@@ -14,6 +13,10 @@ interface OrdersListProps {
 
 const OrdersList = ({ orders, status, title }: OrdersListProps) => {
   const [localOrders, setLocalOrders] = useState<Order[]>(orders);
+
+  useEffect(() => {
+    setLocalOrders(orders);
+  }, [orders]);
 
   if (!localOrders?.length) return null;
   

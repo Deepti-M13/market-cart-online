@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { CartItem, Product, Order } from "../types";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +22,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Load cart from localStorage on initial render
   useEffect(() => {
     const savedCart = localStorage.getItem('farmMarketCart');
     if (savedCart) {
@@ -31,20 +29,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('farmMarketCart', JSON.stringify(items));
   }, [items]);
 
   const addToCart = (product: Product, quantity: number) => {
     setItems(prevItems => {
-      // Check if product already exists in cart
       const existingItemIndex = prevItems.findIndex(
         item => item.product.id === product.id
       );
 
       if (existingItemIndex >= 0) {
-        // Update quantity if product exists
         const updatedItems = [...prevItems];
         updatedItems[existingItemIndex].quantity += quantity;
         
@@ -55,7 +50,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         
         return updatedItems;
       } else {
-        // Add new item if product doesn't exist
         toast({
           title: "Added to cart",
           description: `${quantity} ${product.name} added to your cart`,
@@ -105,7 +99,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  // New checkout function to handle order creation
   const checkout = () => {
     if (!user) {
       toast({
@@ -125,33 +118,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Create new order
-    const newOrder: Order = {
-      id: `order-${Date.now()}`,
-      buyerId: user.id,
-      buyerName: user.name,
-      items: [...items],
-      total: cartTotal,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-
-    // Save order to "database" (localStorage in this case)
-    const savedOrders = localStorage.getItem('farmMarketOrders');
-    const orders = savedOrders ? JSON.parse(savedOrders) : [];
-    orders.push(newOrder);
-    localStorage.setItem('farmMarketOrders', JSON.stringify(orders));
-
-    // Show notification
-    toast({
-      title: "Order placed",
-      description: "Your order has been placed successfully!",
+    const itemsByFarmer: Record<string, CartItem[]> = {};
+    items.forEach(item => {
+      const farmerId = item.product.farmerId;
+      if (!itemsByFarmer[farmerId]) {
+        itemsByFarmer[farmerId] = [];
+      }
+      itemsByFarmer[farmerId].push(item);
     });
 
-    // Use sonnerToast for success notification
-    sonnerToast.success("Order placed successfully!");
+    Object.entries(itemsByFarmer).forEach(([farmerId, farmerItems]) => {
+      const orderTotal = farmerItems.reduce(
+        (total, item) => total + item.product.price * item.quantity,
+        0
+      );
 
-    // Clear cart after checkout
+      const newOrder: Order = {
+        id: `order-${Date.now()}-${farmerId}`,
+        buyerId: user.id,
+        buyerName: user.name,
+        items: farmerItems,
+        total: orderTotal,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      };
+
+      const savedOrders = localStorage.getItem('farmMarketOrders') || '[]';
+      const orders = JSON.parse(savedOrders);
+      orders.push(newOrder);
+      localStorage.setItem('farmMarketOrders', JSON.stringify(orders));
+    });
+
+    sonnerToast.success("Orders placed successfully!");
     clearCart();
   };
 
