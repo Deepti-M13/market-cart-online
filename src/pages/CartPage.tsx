@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import QuantitySelector from "@/components/QuantitySelector";
-import { ShoppingCart, Trash2, CreditCard, Cash } from "lucide-react";
+import { ShoppingCart, Trash2, CreditCard, DollarSign } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
@@ -165,7 +165,7 @@ const CartPage = () => {
                 <div className="flex items-center space-x-2 border rounded-md p-3">
                   <RadioGroupItem value="cod" id="cod" />
                   <Label htmlFor="cod" className="flex items-center">
-                    <Cash className="h-5 w-5 mr-2" />
+                    <DollarSign className="h-5 w-5 mr-2" />
                     Cash on Delivery (COD)
                   </Label>
                 </div>
